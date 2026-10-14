@@ -417,8 +417,12 @@ pub fn pause_monitor(state: State<AppState>, job_id: String, paused: bool) -> Cm
     j.pause.send(paused).map_err(err)
 }
 #[tauri::command]
-pub fn list_history(state: State<AppState>) -> CmdResult<Vec<Report>> {
-    lock(&state.store)?.list().map_err(err)
+pub async fn list_history(app: AppHandle) -> CmdResult<Vec<Report>> {
+    tauri::async_runtime::spawn_blocking(move || {
+        lock(&app.state::<AppState>().store)?.list().map_err(err)
+    })
+    .await
+    .map_err(err)?
 }
 #[tauri::command]
 pub fn get_report(state: State<AppState>, id: String) -> CmdResult<Report> {

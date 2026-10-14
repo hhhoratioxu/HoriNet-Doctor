@@ -28,6 +28,9 @@ pub fn host(value: &str) -> Result<&str> {
     Ok(value)
 }
 pub fn endpoint(value: &str) -> Result<SocketAddr> {
+    if value.len() > 80 {
+        return Err(Error::Invalid("endpoint exceeds 80 characters".into()));
+    }
     let addr: SocketAddr = value
         .parse()
         .map_err(|_| Error::Invalid("expected IP:port or [IPv6]:port".into()))?;

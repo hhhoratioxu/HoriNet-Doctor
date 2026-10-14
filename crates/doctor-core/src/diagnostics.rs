@@ -55,6 +55,7 @@ pub async fn run(
         Ok(s) => report.snapshot = s,
         Err(Error::Cancelled) => {
             report.cancelled = true;
+            finish(&mut report, start);
             return Ok(report);
         }
         Err(e) => report.snapshot.warnings.push(e.to_string()),
@@ -424,4 +425,10 @@ fn finish(report: &mut Report, start: Instant) {
     report.duration_ms = start.elapsed().as_millis() as u64;
     report.findings = rules::evaluate(&report.snapshot, &report.checks);
     (report.score, report.score_basis) = rules::score(&report.checks);
+    if report.cancelled {
+        report.score = None;
+        report.score_basis =
+            "诊断已取消，仅保留部分证据，不计算评分 / Cancelled; partial evidence only, no score"
+                .into();
+    }
 }

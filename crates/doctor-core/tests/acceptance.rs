@@ -242,6 +242,78 @@ fn settings_roundtrip() {
     s.save_settings(&cfg).unwrap();
     assert_eq!(s.settings().unwrap().theme, "dark");
 }
+
+#[tokio::test]
+async fn cancelled_after_one_check_has_no_misleading_score() {
+    let token = CancellationToken::new();
+    let cancel = token.clone();
+    let r = diagnostics::run(Settings::default(), token, move |_, _| cancel.cancel())
+        .await
+        .unwrap();
+    assert!(r.cancelled);
+    assert_eq!(r.checks.len(), 1);
+    assert_eq!(r.score, None);
+    assert!(r.score_basis.contains("Cancelled"));
+}
+
+#[tokio::test]
+async fn monitor_can_cancel_while_paused_without_emitting_samples() {
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let port = listener.local_addr().unwrap().port();
+    let (_tx, rx) = tokio::sync::watch::channel(true);
+    let token = CancellationToken::new();
+    let cancel = token.clone();
+    tokio::spawn(async move {
+        tokio::time::sleep(Duration::from_millis(20)).await;
+        cancel.cancel();
+    });
+    let r = horinet_core::network::monitor::monitor(
+        "127.0.0.1",
+        port,
+        Duration::from_secs(1),
+        Duration::from_secs(1),
+        rx,
+        &token,
+        |_| panic!("paused monitor emitted a sample"),
+    )
+    .await;
+    assert!(matches!(r, Err(Error::Cancelled)));
+}
+
+#[tokio::test]
+async fn socks5_proxy_real_protocol_exchange() {
+    use tokio::io::{AsyncReadExt, AsyncWriteExt};
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let endpoint = listener.local_addr().unwrap().to_string();
+    let server = tokio::spawn(async move {
+        let (mut stream, _) = listener.accept().await.unwrap();
+        let mut hello = [0; 3];
+        stream.read_exact(&mut hello).await.unwrap();
+        assert_eq!(hello, [5, 1, 0]);
+        stream.write_all(&[5, 0]).await.unwrap();
+        let mut header = [0; 5];
+        stream.read_exact(&mut header).await.unwrap();
+        assert_eq!(&header[..4], &[5, 1, 0, 3]);
+        let mut target = vec![0; header[4] as usize + 2];
+        stream.read_exact(&mut target).await.unwrap();
+        assert_eq!(&target[..target.len() - 2], b"example.com");
+        stream
+            .write_all(&[5, 0, 0, 1, 127, 0, 0, 1, 0, 0])
+            .await
+            .unwrap();
+    });
+    let r = proxy::test(
+        &endpoint,
+        "socks5",
+        "https://example.com",
+        Duration::from_secs(1),
+        &CancellationToken::new(),
+    )
+    .await
+    .unwrap();
+    assert_eq!(r.status, Status::Normal);
+    server.await.unwrap();
+}
 #[test]
 fn input_rejects_shell_urls_credentials_and_multicast() {
     for h in [

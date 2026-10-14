@@ -28,13 +28,14 @@ pub async fn monitor(
         .ok_or_else(|| Error::Network("no target addresses".into()))?;
     crate::validation::endpoint(&addr.to_string())?;
     let started = Instant::now();
+    let deadline = tokio::time::Instant::now() + Duration::from_secs(86400);
     let mut tick = tokio::time::interval(interval);
     tick.set_missed_tick_behavior(MissedTickBehavior::Skip);
     for sequence in 1..=10000 {
         while *pause.borrow_and_update() {
-            tokio::select! { _ = token.cancelled() => return Err(Error::Cancelled), r = pause.changed() => if r.is_err() { return Err(Error::Cancelled); } }
+            tokio::select! { _ = token.cancelled() => return Err(Error::Cancelled), _ = tokio::time::sleep_until(deadline) => return Ok(()), r = pause.changed() => if r.is_err() { return Err(Error::Cancelled); } }
         }
-        tokio::select! { _ = token.cancelled() => return Err(Error::Cancelled), _ = tick.tick() => {} }
+        tokio::select! { _ = token.cancelled() => return Err(Error::Cancelled), _ = tokio::time::sleep_until(deadline) => return Ok(()), _ = tick.tick() => {} }
         if *pause.borrow() {
             continue;
         }

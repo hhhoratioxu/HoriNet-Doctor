@@ -3,7 +3,7 @@
 ## Official Windows path
 
 - Windows 10/11 x64, Microsoft Edge WebView2 Runtime.
-- Rust Stable (edition 2021; manifest MSRV 1.88; validated compiler versions are recorded in validation/provenance).
+- Rust Stable (edition 2021; minimum 1.97 for the locked dependency set; validated compiler versions are recorded in validation/provenance).
 - Visual Studio 2022/2026 Build Tools with **Desktop development with C++**, x64 MSVC compiler/linker and Windows SDK. Verify `link.exe` is available in the Developer PowerShell environment.
 - Node.js 24 LTS and npm. Git. Internet for initial dependency/NSIS/WebView2 bootstrap downloads.
 

@@ -149,7 +149,16 @@ export default function App() {
     let unlisten: (() => void) | undefined;
     void (async () => {
       try {
-        const cfg = await invoke<Settings>("get_settings");
+        let cfg = defaults;
+        try {
+          cfg = await invoke<Settings>("get_settings");
+        } catch (e) {
+          if (!alive) return;
+          setError(
+            `无法读取设置，请在设置页保存有效配置 / Cannot read settings; save valid settings to recover: ${String(e)}`,
+          );
+          setPage("settings");
+        }
         if (!alive) return;
         setSettings(cfg);
         setDraft(cfg);
@@ -202,6 +211,9 @@ export default function App() {
     document.documentElement.dataset.theme = settings.theme;
     document.documentElement.lang = settings.language;
   }, [settings.theme, settings.language]);
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+  }, [page]);
   useEffect(() => {
     if (!notice) return;
     const timer = window.setTimeout(() => setNotice(""), 4000);
@@ -550,13 +562,11 @@ export default function App() {
       tcpOk: tcp.length,
     };
   }, [samples]);
-  const chart = samples
-    .slice(-180)
-    .map((s) => ({
-      time: (s.elapsed_ms / 1000).toFixed(1),
-      icmp: s.icmp.reached ? s.icmp.rtt_ms : null,
-      tcp: s.tcp_ms,
-    }));
+  const chart = samples.slice(-180).map((s) => ({
+    time: (s.elapsed_ms / 1000).toFixed(1),
+    icmp: s.icmp.reached ? s.icmp.rtt_ms : null,
+    tcp: s.tcp_ms,
+  }));
 
   return (
     <div className="app-shell">

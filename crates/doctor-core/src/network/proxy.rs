@@ -40,14 +40,14 @@ pub async fn test(
             stream.write_all(format!("CONNECT {authority} HTTP/1.1\r\nHost: {authority}\r\nUser-Agent: HoriNet-Doctor\r\n\r\n").as_bytes()).await?;
             let headers = connectivity::read_headers(&mut stream).await?;
             let status = String::from_utf8_lossy(&headers).lines().next().unwrap_or("").to_owned();
-            if !status.split_whitespace().nth(1).is_some_and(|s| s == "200") { return Err(Error::Network(format!("HTTP CONNECT refused: {status}"))); }
+            if !(status.starts_with("HTTP/1.0 ") || status.starts_with("HTTP/1.1 ")) || !status.split_whitespace().nth(1).is_some_and(|s| s == "200") { return Err(Error::Network(format!("HTTP CONNECT refused: {status}"))); }
         } else {
             stream.write_all(&[5, 1, 0]).await?;
             let mut response = [0;2]; stream.read_exact(&mut response).await?;
             if response != [5,0] { return Err(Error::Network("SOCKS5 requires authentication or rejected greeting; credentials are never read".into())); }
             let mut req = vec![5,1,0,3,host.len() as u8]; req.extend_from_slice(host.as_bytes()); req.extend_from_slice(&port.to_be_bytes()); stream.write_all(&req).await?;
             let mut head = [0;4]; stream.read_exact(&mut head).await?;
-            if head[0] != 5 || head[1] != 0 { return Err(Error::Network(format!("SOCKS5 CONNECT error {}", head[1]))); }
+            if head[0] != 5 || head[1] != 0 || head[2] != 0 { return Err(Error::Network(format!("SOCKS5 CONNECT error {}", head[1]))); }
             let len = match head[3] { 1 => 4, 4 => 16, 3 => stream.read_u8().await? as usize, _ => return Err(Error::Network("invalid SOCKS5 reply".into())) };
             let mut rest = vec![0;len + 2]; stream.read_exact(&mut rest).await?;
         }
