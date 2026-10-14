@@ -10,8 +10,8 @@ Version: 0.1.0-beta.1. Independent implementation; no private HoriLink sources u
 - [x] Stage 2: evidence-based rules; offline tests for all requested fault scenarios.
 - [x] Stage 3: React/Tauri UI, bounded monitoring, DNS/Proxy Doctor, traceroute, cancellation.
 - [x] Stage 4: local history, redacted JSON/Markdown reports, settings and error handling.
-- [ ] Stage 5: checks, Windows NSIS installer, docs, CI and beta release.
-- [ ] Download/hash-check/install/launch released Windows build; record limits honestly.
+- [x] Stage 5: checks, Windows NSIS installer, docs, CI and beta release.
+- [x] Download/hash-check/install/launch released Windows build; record limits honestly.
 
 ## Environment and recovery
 
@@ -27,6 +27,12 @@ No synthetic network readings in the application. ICMP timeouts are inconclusive
 
 ## Current checkpoint
 
-Core now has 29 passing tests. Workspace Clippy, frontend typecheck/lint/build and desktop compile passed. Real CLI and desktop diagnosis completed all 16 checks. Desktop monitoring ran 70 real samples, paused at 39 then resumed; DNS Doctor ran both types/transports against two displayed endpoints. Native loopback IPv4/IPv6 traces and public UDP/TCP DNS ran. Google DoH succeeded; Cloudflare DoH failed with TLS handshake EOF on this host. All code is pushed to public main; Windows CI 38533306087 is running. History/export and official MSVC installer acceptance are next; see docs/VALIDATION.md.
+Delivery completed on 2026-10-14. Public release: https://github.com/hhhoratioxu/HoriNet-Doctor/releases/tag/v0.1.0-beta.1
 
-First MSVC CI 38533306087 succeeded at 25d2aba. Installer/CLI/provenance downloaded and all SHA-256 verified; Authenticode status NotSigned. Native desktop JSON save dialog produced a 16-check report with no private IPv4/MAC values; summary copy verified in clipboard. Post-acceptance hardening adds partial-cancel/no-score, paused-task deadline, settings recovery, asynchronous history listing and validation tightening. Re-run final CI before tagging.
+- Released code: `a9d1bcf20b9f250cdfc9246f2721d55fa1d9c5a0`; tag is immutable in this task.
+- Final CI 38535015886 and Release 38535978289 both succeeded. 29 tests passed with zero failures; full frontend/Rust checks and MSVC NSIS packaging passed.
+- Downloaded all 4 Release assets; every SHA-256 matched. Installer: 3,749,375 bytes; Authenticode NotSigned.
+- Installed final Release with exit code 0 to `%LOCALAPPDATA%\Programs\HoriNet Doctor`, launched on Windows 11 Pro x64, and completed another real 16/16 diagnosis in 4,492 ms. App remains responsive and running; language/theme restored to zh-CN/dark.
+- Real monitor: 70 samples, pause at 39, resume, stop; DNS Doctor: 8 queries; native IPv4/IPv6 loopback traces and TCP/HTTP/TLS tests; custom-target GUI traceroute, TCP, proxy failure, history, JSON save, summary copy, English/light theme were exercised.
+- Google DoH succeeded; Cloudflare DoH had TLS EOF on this host and is recorded as failed, not passed. Windows 10 physical-device and broader network acceptance remain unverified.
+- Release files and actual diagnostic records are ignored local artifacts/application data. Only privacy-safe genuine screenshots are committed. See docs/VALIDATION.md for exact boundaries and docs/ROADMAP.md for future work.

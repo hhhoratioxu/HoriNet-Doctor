@@ -10,6 +10,8 @@ A free, local-first, read-only network diagnostics app for **Windows 10 / 11 x64
 
 Actual locally running Windows desktop screenshot; the empty state contains no measurements or private network data.
 
+[Real monitor screenshot](docs/images/desktop-monitor.png) · [English / light theme screenshot](docs/images/desktop-light-en.png)
+
 ## Download and install
 
 Get the **Windows x64 `-setup.exe`** from [v0.1.0-beta.1](https://github.com/hhhoratioxu/HoriNet-Doctor/releases/tag/v0.1.0-beta.1). This is a **beta prerelease**, not a stable release. The NSIS installer installs for the current user. Microsoft Edge WebView2 Runtime is required; if absent the installer offers Microsoft's bootstrapper, which needs Internet access. The normal application does not need administrator privileges.

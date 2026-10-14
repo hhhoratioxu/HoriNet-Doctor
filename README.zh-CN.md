@@ -10,6 +10,8 @@
 
 上图为真实 Windows 桌面运行截图，未开始检测，不含虚构结果或私密网络信息。
 
+[实际监测界面](docs/images/desktop-monitor.png) · [英文 / 浅色主题界面](docs/images/desktop-light-en.png)
+
 ## 下载与安装
 
 前往 [v0.1.0-beta.1 预发布](https://github.com/hhhoratioxu/HoriNet-Doctor/releases/tag/v0.1.0-beta.1)，下载 Windows x64 `-setup.exe`。NSIS 安装到当前用户目录，应用默认无需管理员权限。需要 Microsoft Edge WebView2 Runtime；缺失时安装器提供微软引导安装，需要联网。
