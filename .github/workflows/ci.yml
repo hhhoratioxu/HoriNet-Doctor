@@ -1,0 +1,58 @@
+name: CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_call:
+permissions:
+  contents: read
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: desktop/package-lock.json
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
+      - name: Install frontend dependencies
+        run: npm ci
+        working-directory: desktop
+      - name: TypeScript
+        run: npm run typecheck
+        working-directory: desktop
+      - name: Frontend lint
+        run: npm run lint
+        working-directory: desktop
+      - name: Frontend production build
+        run: npm run build
+        working-directory: desktop
+      - name: Rust formatting
+        run: cargo fmt --all --check
+      - name: Rust Clippy (including desktop)
+        run: cargo clippy --workspace --all-targets --locked -- -D warnings
+      - name: Offline scenarios and native loopback tests
+        run: cargo test --workspace --locked
+      - name: Build Windows x64 NSIS installer
+        run: npm run tauri -- build --target x86_64-pc-windows-msvc --bundles nsis -- --locked
+        working-directory: desktop
+      - name: Build companion CLI
+        run: cargo build --locked --release --target x86_64-pc-windows-msvc -p horinet-core --bin horinet
+      - name: Package, hash and record provenance
+        shell: pwsh
+        run: ./scripts/package-release.ps1
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-x64
+          path: release-artifacts/*
+          if-no-files-found: error
+          retention-days: 14

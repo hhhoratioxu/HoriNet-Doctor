@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security vulnerability / 安全漏洞
+    url: https://github.com/hhhoratioxu/HoriNet-Doctor/security/policy
+    about: Read the private reporting policy; do not disclose publicly.

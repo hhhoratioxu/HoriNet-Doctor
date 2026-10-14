@@ -1,0 +1,30 @@
+name: Bug report / 故障报告
+description: Reproducible app failure, without private network data
+body:
+  - type: markdown
+    attributes:
+      value: 'Do not include raw network reports, IP/MAC/SSID, usernames, proxy URLs or credentials. 不要上传未脱敏报告。'
+  - type: input
+    id: version
+    attributes:
+      label: App version / 软件版本
+    validations:
+      required: true
+  - type: input
+    id: os
+    attributes:
+      label: Windows version / 系统版本
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Reproduction steps / 复现步骤
+    validations:
+      required: true
+  - type: textarea
+    id: behavior
+    attributes:
+      label: Expected and actual behavior / 预期与实际行为
+    validations:
+      required: true
