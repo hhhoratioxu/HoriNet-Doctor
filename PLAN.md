@@ -1,6 +1,6 @@
 # HoriNet Doctor delivery plan
 
-Version: 0.1.0-beta.2 (NAT follow-up in progress). Independent implementation; no private HoriLink sources used.
+Version: 0.1.0-beta.2. Independent implementation; no private HoriLink sources used.
 
 ## NAT Doctor follow-up — 2026-10-20
 
@@ -9,8 +9,16 @@ Version: 0.1.0-beta.2 (NAT follow-up in progress). Independent implementation; n
 - [x] Implement bounded, cancellable UDP STUN and conservative behavior discovery in Rust.
 - [x] Add explicit consent, configurable server, NAT Doctor UI, optional diagnosis integration, history and redacted exports.
 - [x] Test local STUN fixtures, malformed packets, classification, cancellation, timeouts and privacy; 51 core tests and frontend checks passed locally (GNU).
-- [ ] Exercise real STUN, build Windows installer, verify CI and publish the next beta without changing beta.1.
-- [ ] Download/check/install the new release and document verified versus unverified results.
+- [x] Exercise real STUN, build Windows installer, verify CI and publish the next beta without changing beta.1.
+- [x] Download/check/install the new release and document verified versus unverified results.
+
+Beta.2 delivered: https://github.com/hhhoratioxu/HoriNet-Doctor/releases/tag/v0.1.0-beta.2
+Released source: `620de573068906b2dbd7cb40ac5bf79fc1b7209d`.
+Final CI `39435459052` and Release `39435605254` succeeded with 51 tests, zero failures.
+All four assets downloaded, checksums/provenance verified; installer 3,831,684 bytes, NotSigned.
+Install exit 0; installed product version 0.1.0-beta.2, real native window responsive.
+Released MSVC CLI completed 8 real STUN probes in 7,770 ms, port-restricted-cone inference with low confidence; standalone core acceptance completed 17 checks and local history/export.
+NAT page end-to-end native UI interactions remain unverified: automatic review blocked the debugging-port command, and normal UI Automation exposed only window controls. Rendering, IPC compilation and core behavior are separately verified. No physical-router, carrier or Windows 10 acceptance is claimed. See docs/VALIDATION.md.
 
 The checkout moved to `D:\iCloud\iCloudDrive\Documents\CodeX\Hori开源\HoriNet-Doctor`.
 NAT discovery sends no traffic until explicit user consent. A failed STUN request is not an Internet outage; unsupported behavior discovery remains unknown.
