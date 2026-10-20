@@ -1,6 +1,7 @@
 @import "tailwindcss";
 
-.nat-consent {
+.checkbox.nat-consent {
+  font-size: 12px;
   align-items: flex-start;
   line-height: 1.7;
   margin: 18px 0;

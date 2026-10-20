@@ -673,7 +673,7 @@ export default function App() {
               <span className="live-dot" />
               {t("本地运行", "Local first")}
             </span>
-            <span className="beta-pill">BETA 01</span>
+            <span className="beta-pill">BETA</span>
           </div>
         </header>
         <div className="content">

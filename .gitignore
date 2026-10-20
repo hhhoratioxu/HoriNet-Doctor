@@ -10,6 +10,7 @@
 !.env.example
 *.local
 /local-artifacts/
+/desktop/local-artifacts/
 /diagnostic-data/
 /release-artifacts/
 /desktop/src-tauri/icons/android/
