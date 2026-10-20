@@ -52,5 +52,5 @@ Do not commit machine-specific cache paths. macOS/Linux native inspection return
 2. Ensure Git working tree contains no `.env`, diagnostic reports, SSIDs, MACs, IP snapshots, token files or caches.
 3. Update PLAN/CHANGELOG/VALIDATION and review the exact source commit.
 4. Push source; wait for Windows CI success at that commit.
-5. Push `v0.1.0-beta.1`. Release reruns checks/build and publishes a prerelease, hashes and provenance.
+5. Push a new version tag matching the manifests (currently `v0.1.0-beta.2`); never move an existing release tag. Release reruns checks/build and publishes a prerelease, hashes and provenance.
 6. Download, verify hashes, install and launch; record runtime evidence separately from CI. Signing remains false unless an actual certificate/signing process is introduced.

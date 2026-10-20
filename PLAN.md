@@ -1,6 +1,19 @@
 # HoriNet Doctor delivery plan
 
-Version: 0.1.0-beta.1. Independent implementation; no private HoriLink sources used.
+Version: 0.1.0-beta.2 (NAT follow-up in progress). Independent implementation; no private HoriLink sources used.
+
+## NAT Doctor follow-up — 2026-10-20
+
+- [x] Recover relocated checkout; verify clean Git state and GitHub owner/permissions.
+- [x] Review RFC 8489 / RFC 5780; keep mapping, filtering and classic NAT labels separate.
+- [x] Implement bounded, cancellable UDP STUN and conservative behavior discovery in Rust.
+- [x] Add explicit consent, configurable server, NAT Doctor UI, optional diagnosis integration, history and redacted exports.
+- [x] Test local STUN fixtures, malformed packets, classification, cancellation, timeouts and privacy; 51 core tests and frontend checks passed locally (GNU).
+- [ ] Exercise real STUN, build Windows installer, verify CI and publish the next beta without changing beta.1.
+- [ ] Download/check/install the new release and document verified versus unverified results.
+
+The checkout moved to `D:\iCloud\iCloudDrive\Documents\CodeX\Hori开源\HoriNet-Doctor`.
+NAT discovery sends no traffic until explicit user consent. A failed STUN request is not an Internet outage; unsupported behavior discovery remains unknown.
 
 ## Progress
 
@@ -25,7 +38,7 @@ Version: 0.1.0-beta.1. Independent implementation; no private HoriLink sources u
 
 No synthetic network readings in the application. ICMP timeouts are inconclusive. DNS differences do not prove interference. All tests are explicitly distinguished from real network and desktop acceptance. Release remains unsigned and marked prerelease.
 
-## Current checkpoint
+## Historical beta.1 checkpoint
 
 Delivery completed on 2026-10-14. Public release: https://github.com/hhhoratioxu/HoriNet-Doctor/releases/tag/v0.1.0-beta.1
 

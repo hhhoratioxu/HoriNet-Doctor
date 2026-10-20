@@ -1,4 +1,80 @@
 @import "tailwindcss";
+
+.nat-consent {
+  align-items: flex-start;
+  line-height: 1.7;
+  margin: 18px 0;
+  max-width: 900px;
+}
+.nat-consent input {
+  margin-top: 5px;
+  flex-shrink: 0;
+}
+.nat-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  margin-top: 18px;
+}
+.nat-actions > span {
+  flex: 1 1 300px;
+}
+.nat-behaviors {
+  margin: 22px 0;
+}
+.nat-behaviors > div {
+  background: var(--input);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 20px;
+}
+.nat-behaviors small {
+  color: var(--muted);
+}
+.nat-behaviors strong {
+  display: block;
+  font-size: 19px;
+  margin: 8px 0;
+}
+.nat-behaviors p {
+  color: var(--muted);
+  font-size: 12px;
+}
+.nat-endpoints {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 22px;
+  margin: 14px 0;
+}
+.nat-endpoints code {
+  overflow-wrap: anywhere;
+}
+.nat-probes {
+  min-width: 640px;
+}
+.nat-probes td {
+  vertical-align: top;
+}
+.nat-probes details {
+  max-width: 380px;
+  color: var(--muted);
+  font-size: 12px;
+  margin-top: 8px;
+}
+.nat-probes details p {
+  overflow-wrap: anywhere;
+}
+.nat-probes summary,
+.nat-evidence summary {
+  cursor: pointer;
+}
+.nat-evidence {
+  margin-top: 20px;
+}
+.nat-evidence p {
+  overflow-wrap: anywhere;
+}
 @theme {
   --font-sans:
     "Segoe UI Variable", "Segoe UI", "Microsoft YaHei UI", sans-serif;
@@ -222,6 +298,7 @@ tr:last-child td {
     color-mix(in srgb, var(--bg) 94%, transparent);
 }
 .sidebar {
+  overflow-y: auto;
   width: 228px;
   position: fixed;
   inset: 0 auto 0 0;

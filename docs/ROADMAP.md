@@ -2,6 +2,8 @@
 
 ## Follow-up beta work
 
+- Extend NAT evidence across real routers, mobile/carrier/VPN paths, more RFC 5780 servers and IPv6. IPv4 UDP NAT Doctor is implemented in beta.2; console ratings, CGNAT proof, hairpin/lifetime tests and router modification are not implemented.
+
 - Broader Windows 10/11 physical-device acceptance across Wi-Fi, enterprise CA, NRPT/split DNS, IPv6-only networks, portals, VPNs and authenticated proxies.
 - Scoped IPv6 interface-aware probes, more traceroute attempts and optional reverse lookup.
 - Structured error codes and deeper effective WinHTTP/NRPT inspection; keep application internals private.

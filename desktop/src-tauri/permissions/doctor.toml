@@ -1,4 +1,4 @@
 [[permission]]
 identifier = "allow-doctor"
 description = "Validated, read-only network jobs; app-owned local history/settings; user-chosen exports; fixed repository link."
-commands.allow = ["get_settings", "save_settings", "inspect_network", "start_diagnosis", "start_monitor", "start_trace", "start_dns", "start_proxy", "test_tcp", "cancel_job", "pause_monitor", "list_history", "get_report", "delete_history", "clear_history", "export_report", "copy_summary", "export_trace", "open_repository"]
+commands.allow = ["get_settings", "save_settings", "inspect_network", "start_diagnosis", "start_nat", "start_monitor", "start_trace", "start_dns", "start_proxy", "test_tcp", "cancel_job", "pause_monitor", "list_history", "get_report", "delete_history", "clear_history", "export_report", "copy_summary", "export_trace", "open_repository"]

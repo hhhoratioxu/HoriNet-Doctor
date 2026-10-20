@@ -17,6 +17,13 @@ pub fn exported(report: &Report, detailed: bool) -> Report {
     secrets.extend(report.snapshot.proxy.system_server.clone());
     secrets.extend(report.snapshot.proxy.winhttp_server.clone());
     secrets.extend(report.snapshot.proxy.pac_url.clone());
+    if let Some(nat) = &report.nat {
+        secrets.push(nat.server.clone());
+        secrets.extend(nat.local_endpoint.clone());
+        secrets.extend(nat.mapped_endpoint.clone());
+        secrets.extend(nat.resolved_server.clone());
+        secrets.extend(nat.alternate_endpoint.clone());
+    }
     if let Ok(user) = std::env::var("USERNAME") {
         if user.len() >= 2 {
             secrets.push(user);
@@ -61,8 +68,16 @@ pub fn exported(report: &Report, detailed: bool) -> Report {
                 }
             }
             Value::Object(o) => {
-                for v in o.values_mut() {
-                    scrub(v, patterns, generic, ipv6)
+                for (key, v) in o.iter_mut() {
+                    // Typed enum values are public vocabulary, not user data. An adapter
+                    // named "normal" or a username matching "full_cone" must not make
+                    // redaction produce an invalid Report and panic on deserialization.
+                    if !matches!(
+                        key.as_str(),
+                        "status" | "severity" | "mapping" | "filtering" | "nat_type"
+                    ) {
+                        scrub(v, patterns, generic, ipv6)
+                    }
                 }
             }
             _ => {}
@@ -83,7 +98,8 @@ fn safe(s: &str) -> String {
 }
 pub fn markdown(report: &Report, detailed: bool) -> String {
     let r = exported(report, detailed);
-    let mut out = format!("# HoriNet Doctor\n\nNetwork Diagnostics & Troubleshooting — v0.1.0-beta.1\n\n- Time (UTC): {}\n- Platform: {}\n- Duration: {} ms\n- Cancelled: {}\n- Privacy: {}\n- Score: {}\n- Basis: {}\n\n",r.started_at,r.platform,r.duration_ms,r.cancelled,if detailed {"Detailed data explicitly included"} else {"Redacted by default"},r.score.map_or("Unknown".into(),|s| s.to_string()),safe(&r.score_basis));
+    let version = env!("CARGO_PKG_VERSION");
+    let mut out = format!("# HoriNet Doctor\n\nNetwork Diagnostics & Troubleshooting — v{version}\n\n- Time (UTC): {}\n- Platform: {}\n- Duration: {} ms\n- Cancelled: {}\n- Privacy: {}\n- Score: {}\n- Basis: {}\n\n",r.started_at,r.platform,r.duration_ms,r.cancelled,if detailed {"Detailed data explicitly included"} else {"Redacted by default"},r.score.map_or("Unknown".into(),|s| s.to_string()),safe(&r.score_basis));
     out.push_str("## Checks\n\n");
     for c in &r.checks {
         out.push_str(&format!(
@@ -121,6 +137,15 @@ pub fn markdown(report: &Report, detailed: bool) -> String {
         }
         out.push('\n');
     }
+    if let Some(nat) = &r.nat {
+        out.push_str("## NAT behavior (IPv4 UDP)\n\n```json\n");
+        out.push_str(
+            &serde_json::to_string_pretty(nat)
+                .unwrap_or_default()
+                .replace('`', "\\u0060"),
+        );
+        out.push_str("\n```\n\nThis observation is not a console NAT rating or a guarantee of P2P reachability.\n\n");
+    }
     out.push_str("## Native snapshot\n\n```json\n");
     // Escape backticks so user-controlled interface labels cannot end the fence.
     out.push_str(
@@ -133,7 +158,7 @@ pub fn markdown(report: &Report, detailed: bool) -> String {
 }
 pub fn summary(report: &Report, detailed: bool) -> String {
     let r = exported(report, detailed);
-    format!(
+    let mut text = format!(
         "HoriNet Doctor | {} | {} ms | score {}\n{}\n{}",
         r.started_at,
         r.duration_ms,
@@ -144,5 +169,9 @@ pub fn summary(report: &Report, detailed: bool) -> String {
             .map(|f| format!("{} [{}]", f.phenomenon, f.confidence))
             .collect::<Vec<_>>()
             .join("\n")
-    )
+    );
+    if let Some(nat) = &r.nat {
+        text.push_str(&format!("\nNAT (IPv4 UDP): {}\nMapping: {:?}; filtering: {:?}; confidence: {}\nMapped endpoint: {}\nSelected path/time only; not a console rating or P2P guarantee.",nat.summary,nat.mapping,nat.filtering,nat.confidence,nat.mapped_endpoint.as_deref().unwrap_or("unknown")));
+    }
+    text
 }

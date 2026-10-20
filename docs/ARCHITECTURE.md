@@ -21,6 +21,8 @@ React/TypeScript views
 - `network/monitor.rs`: one sequential sample loop, simultaneous ICMP/TCP per sample, missed intervals skipped, pause/resume and finite limits.
 - `network/traceroute.rs`: native TTL/hop limit, sequential max 30, one echo per hop, unknown responses retained.
 - `network/proxy.rs`: explicit HTTP CONNECT / SOCKS5 negotiation and safe parsing of a configured static proxy endpoint.
+- `network/stun.rs`: bounded RFC 8489 UDP transaction/attribute codec, 96-bit transaction IDs, optional fingerprint validation, source checks, finite retransmission and cancellation. No credentials or redirects.
+- `network/nat.rs`: consent gate before DNS/socket creation; RFC 5780 filtering before mapping, alternate-listener controls and stable baseline checks, conservative labels/confidence. One socket, at most 8 transactions and a 60-second total bound. [NAT design and interpretation](NAT.md).
 - `platform/windows.rs`: isolated Windows FFI. Adapter output is aligned and retained during traversal; ICMP/WLAN/MIB handles and API allocations are released through RAII, WinHTTP strings through `GlobalFree`. No native mutable network API or shell fallback.
 - `reports.rs`: recursive string redaction across snapshots/checks/findings/errors; JSON, Markdown and summary. Detailed export is opt-in.
 - `storage.rs`: application-owned UUID-addressed JSON history, bounded reads/retention, atomic writes, validated settings.

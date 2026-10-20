@@ -1,7 +1,7 @@
 use horinet_core::{
     diagnostics,
     models::*,
-    network::{connectivity, dns, monitor, proxy, traceroute},
+    network::{connectivity, dns, monitor, nat, proxy, traceroute},
     reports,
     storage::Store,
     validation,
@@ -75,6 +75,7 @@ struct Event {
     hop: Option<Hop>,
     dns: Option<DnsResult>,
     proxy: Option<ProxyTest>,
+    nat_probe: Option<NatProbe>,
     tcp_ms: Option<f64>,
     error: Option<String>,
 }
@@ -164,7 +165,7 @@ pub fn start_diagnosis(app: AppHandle, state: State<AppState>, job_id: String) -
                 &app,
                 Event {
                     completed: Some(n),
-                    total: Some(diagnostics::TOTAL),
+                    total: Some(diagnostics::total(&settings)),
                     check: Some(c),
                     ..event(&job_id, "diagnose")
                 },
@@ -180,6 +181,59 @@ pub fn start_diagnosis(app: AppHandle, state: State<AppState>, job_id: String) -
                     Event {
                         report: Some(report),
                         ..event(&job_id, "diagnose")
+                    },
+                );
+                g.finish(saved.err());
+            }
+            Err(e) => g.finish(Some(e.to_string())),
+        }
+    });
+    Ok(())
+}
+#[tauri::command]
+pub fn start_nat(
+    app: AppHandle,
+    state: State<AppState>,
+    job_id: String,
+    server: String,
+    consent: bool,
+) -> CmdResult<()> {
+    if !consent {
+        return Err(
+            "Explicit consent is required for public mapped IP/port discovery via STUN".into(),
+        );
+    }
+    validation::stun_server(&server).map_err(err)?;
+    let settings = state.settings()?;
+    let (token, _) = state.begin(&job_id)?;
+    tauri::async_runtime::spawn(async move {
+        let g = guard(&app, &job_id, "nat");
+        let result = nat::detect(
+            &server,
+            consent,
+            Duration::from_millis(settings.timeout_ms),
+            &token,
+            |probe| {
+                emit(
+                    &app,
+                    Event {
+                        nat_probe: Some(probe),
+                        ..event(&job_id, "nat")
+                    },
+                );
+            },
+        )
+        .await;
+        match result {
+            Ok(result) => {
+                let report = nat::report(result);
+                let saved = lock(&app.state::<AppState>().store)
+                    .and_then(|s| s.save(&report, settings.retention).map_err(err));
+                emit(
+                    &app,
+                    Event {
+                        report: Some(report),
+                        ..event(&job_id, "nat")
                     },
                 );
                 g.finish(saved.err());

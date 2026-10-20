@@ -8,13 +8,13 @@
 
 ![Windows 桌面实际运行的初始空状态](docs/images/desktop-empty.png)
 
-上图为真实 Windows 桌面运行截图，未开始检测，不含虚构结果或私密网络信息。
+上图为真实 beta.1 Windows 桌面运行截图（新增 NAT 页面之前），未开始检测，不含虚构结果或私密网络信息。
 
 [实际监测界面](docs/images/desktop-monitor.png) · [英文 / 浅色主题界面](docs/images/desktop-light-en.png)
 
 ## 下载与安装
 
-前往 [v0.1.0-beta.1 预发布](https://github.com/hhhoratioxu/HoriNet-Doctor/releases/tag/v0.1.0-beta.1)，下载 Windows x64 `-setup.exe`。NSIS 安装到当前用户目录，应用默认无需管理员权限。需要 Microsoft Edge WebView2 Runtime；缺失时安装器提供微软引导安装，需要联网。
+前往 [v0.1.0-beta.2 预发布](https://github.com/hhhoratioxu/HoriNet-Doctor/releases/tag/v0.1.0-beta.2)，下载 Windows x64 `-setup.exe`。NSIS 安装到当前用户目录，应用默认无需管理员权限。需要 Microsoft Edge WebView2 Runtime；缺失时安装器提供微软引导安装，需要联网。
 
 **首版为未签名 Beta，不是稳定版。** 没有代码签名证书，SmartScreen 可能提示；不声称通过签名认证。请使用 `Get-FileHash 安装包路径 -Algorithm SHA256`，与发布页 `SHA256SUMS.txt` 比较。`BUILD-windows-x64.json` 提供构建提交、目标平台和 CI 编号。也提供配套 CLI。
 
@@ -29,14 +29,16 @@
 | Proxy Doctor | Windows 系统静态代理、PAC/WPAD 信息、经典 WinHTTP 配置、TUN/VPN 等适配器线索；主动 HTTP CONNECT/SOCKS5 无认证隧道测试；设置诊断基线，手动切换后对比。 |
 | 网络工具 | IPv4/IPv6 原生 ICMP Traceroute、最多 30 跳、每跳 RTT/未知、取消、复制/导出；单 IP:端口 TCP 测试。Ping 在监测页。 |
 | 历史和报告 | 每轮诊断保存结构化本机记录；浏览、删除、清空、保留数量设置；JSON/Markdown 导出及摘要复制，默认脱敏。 |
-| 桌面界面 | 九个页面，深浅玻璃主题，简中/英文操作界面，系统标题栏与键盘焦点；系统背景材质效果取决于 Windows 版本，应用内部同时使用 CSS backdrop blur。 |
+| NAT Doctor | 真实 IPv4 UDP STUN / RFC 5780，区分映射和过滤，给出保守类型标签与置信度。检测前明确同意，可取消、自定义目标、本机历史和默认脱敏。[详细用法](docs/NAT.md)。 |
+| 桌面界面 | 十个页面，深浅玻璃主题，简中/英文操作界面，系统标题栏与键盘焦点；系统背景材质效果取决于 Windows 版本，应用内部同时使用 CSS backdrop blur。 |
 
 初始状态没有网络评分或伪造曲线。关系视图是**诊断依赖关系，不是物理网络拓扑**。评分公式为正常 100、警告 50、异常/未知 0，取已收集项目平均，同时显示可判断覆盖数；全部未知时不评分。该分数不表示全网可用率。技术原始证据保留 API / 协议英文描述。
 
 ## 安全、隐私与默认目标
 
-- 只读，无遥测、无广告、不上传诊断报告、不使用付费 API、不调用公网 IP 查询服务，不自动修复系统。
+- 只读，无遥测、无广告、不上传诊断报告、不使用付费 API、STUN 公网映射探测默认关闭、需明确同意，不自动修复系统。
 - 检测由用户主动触发，可在设置查看和更改：IPv4 TCP `1.1.1.1:443`、IPv6 TCP `[2606:4700:4700::1111]:443`、解析域名 `example.com`、HTTP 门户测试 `www.msftconnecttest.com/connecttest.txt`、HTTPS `example.com`。DNS Doctor 默认展示 `1.1.1.1:53` / `8.8.8.8:53`，可选 DoH 为 Cloudflare。接收方能看到正常网络请求的来源 IP 和所查询域名。
+- NAT Doctor 默认服务器为 `stun.miwifi.com:3478`，同意前可查看和更改；服务端及其公布的备用端点会看到来源 IP，不会偷偷切换服务商。一键诊断中的 NAT 探测需在设置单独同意，启用后为 17 项，默认仍为 16 项；NAT 不计入健康评分。
 - HTTP 用于观察门户重定向，为不含凭据的明文请求；不跟随重定向。HTTPS/TLS 校验证书，使用公共 WebPKI 根，绕过系统/应用 HTTP 代理；操作系统的 VPN/TUN 路由仍然生效。
 - 不执行 PAC，不读取代理软件账号、订阅、密码或令牌；只检测用户指定或系统配置的代理端口，不扫描本机端口。
 - 原始历史在 `%LOCALAPPDATA%\io.github.hhhoratioxu.horinet-doctor\history`，设置位于同级。历史包含敏感网络信息，依赖 Windows 账户权限，**未额外加密**。可以随时删除。
@@ -45,6 +47,7 @@
 
 ## 结果解释与已知限制
 
+- NAT 只检测本次 IPv4 UDP 端口与服务器路径。服务器不支持 RFC 5780、UDP 不可达或证据冲突时保留未知；受限过滤是低置信度推测。不是主机 NAT 1/2/3 分级，不能确认 CGNAT、双重 NAT 或 P2P 一定可用。[详细说明](docs/NAT.md)。
 - ICMP 超时可能只是过滤；无应答率不是确定的链路丢包率；未知跳点不证明线路中断。RTT 波动为相邻成功样本差值的平均绝对值。
 - 单个 IP、端口、网站不可达不能证明全网故障。不同 DNS 的答案可因 CDN、地理位置、缓存和分流而变化，不能据此断言污染或劫持。
 - Wi-Fi 未连接、WLAN 服务不可用或位置权限被拒绝时，SSID/信号显示未知；程序不调整系统隐私权限。DHCP 检查使用原生配置/地址证据，不续租。

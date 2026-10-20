@@ -81,7 +81,7 @@ pub fn client(timeout: Duration) -> Result<reqwest::Client> {
         .no_proxy()
         .redirect(reqwest::redirect::Policy::none())
         .timeout(timeout)
-        .user_agent("HoriNet-Doctor/0.1.0-beta.1")
+        .user_agent(concat!("HoriNet-Doctor/", env!("CARGO_PKG_VERSION")))
         .build()
         .map_err(|e| Error::Network(e.to_string()))
 }

@@ -17,6 +17,7 @@ fn main() {
             commands::save_settings,
             commands::inspect_network,
             commands::start_diagnosis,
+            commands::start_nat,
             commands::start_monitor,
             commands::start_trace,
             commands::start_dns,

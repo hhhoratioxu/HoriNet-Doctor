@@ -1,5 +1,15 @@
 # Validation record
 
+## NAT Doctor beta.2 follow-up — 2026-10-20 (Asia/Taipei)
+
+- Checkout relocated to `Documents\CodeX\Hori开源\HoriNet-Doctor`; Git history preserved. GitHub identity `hhhoratioxu`, public repository and admin/push rights rechecked.
+- Local GNU Rust: **51 tests passed, zero failures** (29 existing + 5 NAT/STUN unit tests + 17 NAT acceptance tests). The new tests use real loopback UDP sockets with explicitly synthetic server behavior, and cover all classic labels, mapping distinctions, probe order/single source port, ignored change requests, error 420, unavailable alternate listeners, unstable mapping, timeout, cancellation, no-consent/no-traffic, old settings/report migration, score exclusion, history and redaction. These are protocol fixtures, not observations of physical routers.
+- TypeScript, ESLint and Vite production build passed. Final GNU workspace Clippy with `-D warnings`, all 51 workspace tests and the desktop build with `custom-protocol` passed. GNU linking retains the known duplicate-manifest warning; this is separate from MSVC packaging.
+- The locally built beta.2 desktop started normally, exposed a real native window and remained responsive. Automated UI acceptance via a browser debugging port was rejected by automatic approval review (only reason: blocked by policy); no workaround enabling that port was used. NAT button/cancel/history/export UI interactions have not yet been accepted end to end in beta.2. Hosted MSVC build, release and installation are pending at this checkpoint; beta.1 evidence below is historical.
+- Real CLI STUN on this host, with explicit consent: `stun.miwifi.com:3478` completed **8 probes in 8,443 ms**. Mapping was endpoint independent; both change-response probes timed out after 3 sends, while regular primary/alternate controls and final stability check responded. The reported **port restricted cone is an inference with low confidence**, relative to this one IPv4 UDP path. This does not verify a physical router type, CGNAT, game connectivity or P2P success.
+- `stun.hot-chilli.net:3478` returned a valid basic Binding response but no usable RFC 5780 alternate endpoint, so type/mapping/filtering remained unknown. `stun.voipgate.com:3478` gave no matching Binding response within 3,005 ms / 3 sends on this host; remained unknown, not an Internet outage. No undisclosed automatic fallback or provider selection occurs.
+- Actual local/public endpoint values are retained only in local app data or ignored artifacts; no real STUN response endpoint is committed.
+
 Date: 2026-10-14 (Asia/Taipei). Never interpret build success as full runtime or physical-device acceptance.
 
 ## Executed locally

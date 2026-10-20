@@ -62,6 +62,33 @@ pub fn web_url(value: &str, https_only: bool) -> Result<url::Url> {
     }
     Ok(url)
 }
+/// Explicit IPv4 STUN endpoint, not a URI, URL, list or arbitrary shell argument.
+pub fn stun_server(value: &str) -> Result<(&str, u16)> {
+    if value.len() > 259 {
+        return Err(Error::Invalid(
+            "STUN endpoint exceeds 259 characters".into(),
+        ));
+    }
+    let (name, port) = value
+        .rsplit_once(':')
+        .ok_or_else(|| Error::Invalid("expected STUN hostname:port or IPv4:port".into()))?;
+    host(name)?;
+    if name.contains(':') || name.parse::<IpAddr>().is_ok_and(|ip| ip.is_ipv6()) {
+        return Err(Error::Invalid(
+            "NAT discovery currently measures IPv4 UDP only".into(),
+        ));
+    }
+    let port: u16 = port
+        .parse()
+        .map_err(|_| Error::Invalid("invalid STUN port".into()))?;
+    if port == 0 {
+        return Err(Error::Invalid("STUN port must be 1..65535".into()));
+    }
+    if let Ok(ip) = name.parse::<std::net::Ipv4Addr>() {
+        endpoint(&SocketAddr::new(ip.into(), port).to_string())?;
+    }
+    Ok((name, port))
+}
 pub fn settings(s: &Settings) -> Result<()> {
     if !matches!(s.language.as_str(), "zh-CN" | "en")
         || !matches!(s.theme.as_str(), "dark" | "light")
@@ -83,5 +110,6 @@ pub fn settings(s: &Settings) -> Result<()> {
     web_url(&s.http_url, false)?;
     web_url(&s.https_url, true)?;
     web_url(&s.doh_url, true)?;
+    stun_server(&s.stun_server)?;
     Ok(())
 }

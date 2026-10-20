@@ -55,6 +55,7 @@ fn report() -> Report {
         findings: vec![],
         score: Some(100),
         score_basis: "fixture".into(),
+        nat: None,
     }
 }
 #[test]

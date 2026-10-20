@@ -1,13 +1,14 @@
-HoriNet Doctor's first unsigned **Windows x64 beta**: real local network diagnostics with Rust and Tauri 2.
+HoriNet Doctor **v0.1.0-beta.2** adds real NAT behavior discovery to the unsigned Windows x64 beta.
 
-- 16-check diagnosis with explainable findings, progress/cancel/timeouts.
-- Live ICMP/TCP monitoring, UDP/TCP/DoH DNS Doctor, Proxy Doctor, IPv4/IPv6 traceroute and TCP tools.
-- Local history/settings, redacted JSON/Markdown/summary exports, Simplified Chinese/English, dark/light interface.
+- **NAT Doctor:** IPv4 UDP STUN / RFC 5780, separate mapping and filtering, evidence and confidence; conservative full-cone / restricted-cone / port-restricted / symmetric labels only when supported by observations.
+- **Explicit consent:** configurable STUN target (default `stun.miwifi.com:3478`), no STUN traffic before consent; optional one-click integration defaults off. NAT does not affect the health score.
+- **Usable workflow:** live probes, cancel/timeouts, endpoint masking, local history, redacted JSON/Markdown and summary exports. Original 16-check diagnosis and network tools remain available; consented runs add a 17th check.
+- **Protocol checks:** 22 new offline/loopback tests plus the original 29 scenarios. CI runs all 51 tests, formatting, strict workspace Clippy, npm ci, TypeScript, ESLint, production build and MSVC NSIS packaging before publishing.
 
-Download `HoriNet-Doctor_0.1.0-beta.1_windows-x64-setup.exe`. Requires Windows 10/11 x64 and Microsoft Edge WebView2 Runtime. Current-user installation; no administrator privileges for diagnosis.
+Download `HoriNet-Doctor_0.1.0-beta.2_windows-x64-setup.exe`. Windows 10/11 x64, WebView2 Runtime, current-user installation. **Unsigned prerelease**: no signing certificate; SmartScreen may warn. Verify `SHA256SUMS.txt`; `BUILD-windows-x64.json` identifies the source commit, target and build run.
 
-**Unsigned prerelease:** no signing certificate, SmartScreen may warn. Verify `SHA256SUMS.txt`; `BUILD-windows-x64.json` identifies the exact source/build. CI validates formatting, workspace Clippy/tests, TypeScript/lint/build and MSVC NSIS packaging. See [validation](https://github.com/hhhoratioxu/HoriNet-Doctor/blob/main/docs/VALIDATION.md) for separate real runtime evidence.
+NAT results describe one IPv4 UDP socket/path/time. Unsupported STUN servers or inconsistent observations remain unknown. Restrictive filtering is inferred from finite timeouts with low confidence. No console NAT ratings, CGNAT/double-NAT proof, P2P guarantee, router/firewall changes or IPv6 NAT discovery. Public STUN services may change. The current machine reached a complete 8-probe sequence; this is not acceptance across physical routers/carriers. See [NAT guide](https://github.com/hhhoratioxu/HoriNet-Doctor/blob/main/docs/NAT.md) and [validation](https://github.com/hhhoratioxu/HoriNet-Doctor/blob/main/docs/VALIDATION.md).
 
-ICMP timeouts/unknown hops are inconclusive; DNS differences do not prove interception. Direct HTTPS/TLS bypasses HTTP proxies and uses public roots. PAC/authenticated proxy execution, scoped link-local IPv6 inputs, automatic system repair and macOS/Linux installers are not included. WLAN data can be unavailable without location permission. No public-IP lookup service, telemetry or report upload. Raw local history is not additionally encrypted; exports default to redacted.
+No telemetry, ads or report upload. Detailed history stays local without additional encryption; default exports redact endpoints and private evidence. ICMP timeouts/unknown hops are inconclusive; DNS differences do not prove interception. macOS/Linux native adapters, automatic repair and PAC/authenticated-proxy execution remain outside this beta.
 
-Please report reproducible issues without sharing unredacted network data. [MIT source and usage/build documentation](https://github.com/hhhoratioxu/HoriNet-Doctor).
+[MIT source and documentation](https://github.com/hhhoratioxu/HoriNet-Doctor). Please report reproducible issues without unredacted network information.

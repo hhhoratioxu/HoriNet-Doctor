@@ -1,6 +1,6 @@
 use crate::{
     models::*,
-    network::{connectivity, dns, icmp, proxy},
+    network::{connectivity, dns, icmp, nat, proxy},
     rules, validation, Error, Result,
 };
 use std::{
@@ -10,6 +10,9 @@ use std::{
 use tokio_util::sync::CancellationToken;
 
 pub const TOTAL: usize = 16;
+pub fn total(settings: &Settings) -> usize {
+    TOTAL + usize::from(settings.nat_enabled)
+}
 pub async fn inspect(token: &CancellationToken) -> Result<Snapshot> {
     use std::sync::{Arc, OnceLock};
     static LIMIT: OnceLock<Arc<tokio::sync::Semaphore>> = OnceLock::new();
@@ -49,6 +52,7 @@ pub async fn run(
         findings: vec![],
         score: None,
         score_basis: String::new(),
+        nat: None,
     };
     let timeout = Duration::from_millis(settings.timeout_ms);
     match inspect(&token).await {
@@ -418,12 +422,33 @@ pub async fn run(
     );
     c.duration_ms = tick.elapsed().as_millis() as u64;
     save!(c);
+    if settings.nat_enabled {
+        match nat::detect(&settings.stun_server, true, timeout, &token, |_| {}).await {
+            Ok(result) => {
+                let check = nat::check(&result);
+                report.nat = Some(result);
+                save!(check);
+            }
+            Err(Error::Cancelled) => {
+                report.cancelled = true;
+            }
+            Err(e) => save!(Check::new(
+                "nat",
+                Status::Unknown,
+                "NAT 类型无法判断 / NAT type unknown",
+                vec![e.to_string()]
+            )),
+        }
+    }
     finish(&mut report, start);
     Ok(report)
 }
 fn finish(report: &mut Report, start: Instant) {
     report.duration_ms = start.elapsed().as_millis() as u64;
     report.findings = rules::evaluate(&report.snapshot, &report.checks);
+    if let Some(result) = &report.nat {
+        report.findings.extend(nat::findings(result));
+    }
     (report.score, report.score_basis) = rules::score(&report.checks);
     if report.cancelled {
         report.score = None;

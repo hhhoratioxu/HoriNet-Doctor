@@ -63,6 +63,7 @@ export interface Report {
   findings: Finding[];
   score: number | null;
   score_basis: string;
+  nat?: NatResult | null;
 }
 export interface Settings {
   language: string;
@@ -73,6 +74,8 @@ export interface Settings {
   http_url: string;
   https_url: string;
   doh_url: string;
+  stun_server: string;
+  nat_enabled: boolean;
   timeout_ms: number;
   interval_ms: number;
   retention: number;
@@ -123,6 +126,7 @@ export interface DoctorEvent {
   hop: Hop | null;
   dns: DnsResult | null;
   proxy: ProxyTest | null;
+  nat_probe: NatProbe | null;
   tcp_ms: number | null;
   error: string | null;
 }
@@ -135,6 +139,8 @@ export const defaults: Settings = {
   http_url: "http://www.msftconnecttest.com/connecttest.txt",
   https_url: "https://example.com/",
   doh_url: "https://cloudflare-dns.com/dns-query",
+  stun_server: "stun.miwifi.com:3478",
+  nat_enabled: false,
   timeout_ms: 3000,
   interval_ms: 1500,
   retention: 100,
@@ -156,4 +162,46 @@ export const checkNames: Record<string, [string, string]> = {
   proxy: ["系统代理端口", "System proxy port"],
   wifi: ["Wi-Fi 信号", "Wi-Fi signal"],
   quality: ["延迟与波动", "Latency & variation"],
+  nat: ["NAT 类型（IPv4 UDP）", "NAT behavior (IPv4 UDP)"],
 };
+
+export type NatBehavior =
+  | "unknown"
+  | "endpoint_independent"
+  | "address_dependent"
+  | "address_and_port_dependent";
+export type NatType =
+  | "unknown"
+  | "no_translation"
+  | "full_cone"
+  | "restricted_cone"
+  | "port_restricted_cone"
+  | "symmetric";
+export interface NatProbe {
+  stage: string;
+  target: string;
+  expected_source: string;
+  response_source: string | null;
+  mapped_endpoint: string | null;
+  elapsed_ms: number;
+  attempts: number;
+  status: Status;
+  detail: string;
+}
+export interface NatResult {
+  server: string;
+  resolved_server: string | null;
+  local_endpoint: string | null;
+  mapped_endpoint: string | null;
+  alternate_endpoint: string | null;
+  mapping: NatBehavior;
+  filtering: NatBehavior;
+  nat_type: NatType;
+  status: Status;
+  confidence: string;
+  summary: string;
+  evidence: string[];
+  limitations: string[];
+  probes: NatProbe[];
+  duration_ms: number;
+}

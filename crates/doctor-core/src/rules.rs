@@ -98,6 +98,8 @@ pub fn evaluate(snapshot: &Snapshot, checks: &[Check]) -> Vec<Finding> {
     out
 }
 pub fn score(checks: &[Check]) -> (Option<u8>, String) {
+    // NAT behavior affects peer traversal, not general Internet health.
+    let checks: Vec<_> = checks.iter().filter(|c| c.id != "nat").collect();
     let known = checks
         .iter()
         .filter(|c| c.status != Status::Unknown)

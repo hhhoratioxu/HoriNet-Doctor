@@ -61,6 +61,7 @@ import {
   type DoctorEvent,
   type DnsResult,
   type Hop,
+  type NatProbe,
   type ProxyTest,
   type Report,
   type Sample,
@@ -68,6 +69,7 @@ import {
   type Snapshot,
   type Status,
 } from "./models";
+import NatResultView, { NatProbeTable } from "./NatResultView";
 
 type Page =
   | "dashboard"
@@ -75,6 +77,7 @@ type Page =
   | "monitor"
   | "dns"
   | "proxy"
+  | "nat"
   | "tools"
   | "history"
   | "settings"
@@ -85,12 +88,13 @@ const navigation: { id: Page; zh: string; en: string; icon: LucideIcon }[] = [
   { id: "monitor", zh: "质量监测", en: "Monitor", icon: Activity },
   { id: "dns", zh: "DNS Doctor", en: "DNS Doctor", icon: Globe2 },
   { id: "proxy", zh: "Proxy Doctor", en: "Proxy Doctor", icon: ShieldCheck },
+  { id: "nat", zh: "NAT Doctor", en: "NAT Doctor", icon: Network },
   { id: "tools", zh: "网络工具", en: "Tools", icon: Terminal },
   { id: "history", zh: "诊断历史", en: "History", icon: History },
   { id: "settings", zh: "设置", en: "Settings", icon: Settings2 },
   { id: "about", zh: "关于", en: "About", icon: Info },
 ];
-const initialNames = Object.keys(checkNames);
+const initialNames = Object.keys(checkNames).filter((id) => id !== "nat");
 const formatMs = (n: number | null | undefined) =>
   n == null ? "—" : `${n.toFixed(1)} ms`;
 
@@ -107,6 +111,12 @@ export default function App() {
   const [job, setJob] = useState<{ id: string; kind: string } | null>(null);
   const jobRef = useRef<string | null>(null);
   const [completed, setCompleted] = useState(0);
+  const [totalChecks, setTotalChecks] = useState(16);
+  const [natReport, setNatReport] = useState<Report | null>(null);
+  const [natProbes, setNatProbes] = useState<NatProbe[]>([]);
+  const [natServer, setNatServer] = useState(defaults.stun_server);
+  const [natConsent, setNatConsent] = useState(false);
+  const [natCancelled, setNatCancelled] = useState(false);
   const [paused, setPaused] = useState(false);
   const [samples, setSamples] = useState<Sample[]>([]);
   const [hops, setHops] = useState<Hop[]>([]);
@@ -163,6 +173,7 @@ export default function App() {
         setSettings(cfg);
         setDraft(cfg);
         setDomain(cfg.domain);
+        setNatServer(cfg.stun_server);
         const off = await listen<DoctorEvent>(
           "doctor-event",
           ({ payload: e }) => {
@@ -173,11 +184,17 @@ export default function App() {
                 e.check!,
               ]);
             if (e.completed != null) setCompleted(e.completed);
+            if (e.total != null) setTotalChecks(e.total);
             if (e.report) {
-              setReport(e.report);
-              setSnapshot(e.report.snapshot);
+              if (e.kind === "nat") setNatReport(e.report);
+              else {
+                setReport(e.report);
+                setSnapshot(e.report.snapshot);
+              }
               void refreshHistory().catch((err) => setError(String(err)));
             }
+            if (e.nat_probe)
+              setNatProbes((probes) => [...probes, e.nat_probe!]);
             if (e.sample) setSamples((s) => [...s.slice(-9999), e.sample!]);
             if (e.hop) setHops((h) => [...h, e.hop!]);
             if (e.dns) setDnsResults((r) => [...r, e.dns!]);
@@ -188,6 +205,8 @@ export default function App() {
               setJob(null);
               setPaused(false);
               if (e.error && !e.error.includes("cancelled")) setError(e.error);
+              if (e.kind === "nat" && e.error?.includes("cancelled"))
+                setNatCancelled(true);
             }
           },
         );
@@ -250,6 +269,7 @@ export default function App() {
     setChecks([]);
     setReport(null);
     setCompleted(0);
+    setTotalChecks(16 + Number(settings.nat_enabled));
     setDetailed(false);
     setPage("diagnose");
     void start("diagnose", "start_diagnosis");
@@ -270,13 +290,13 @@ export default function App() {
     });
   const copy = async (value: string) => {
     await navigator.clipboard.writeText(value);
-    setNotice(t("已复制（默认脱敏）", "Copied (redacted by default)"));
+    setNotice(t("已复制", "Copied"));
   };
-  const exportReport = (format: string) =>
-    report &&
+  const exportReport = (format: string, source: Report | null = report) =>
+    source &&
     void act(async () => {
       const ok = await invoke<boolean>("export_report", {
-        id: report.id,
+        id: source.id,
         format,
         detailed,
       });
@@ -374,17 +394,20 @@ export default function App() {
       </div>
     </section>
   );
-  const reportActions = () =>
-    report && (
+  const reportActions = (source: Report | null = report) =>
+    source && (
       <div className="report-actions">
         <button
           className="button secondary"
-          onClick={() => exportReport("json")}
+          onClick={() => exportReport("json", source)}
         >
           <Download size={15} />
           JSON
         </button>
-        <button className="button secondary" onClick={() => exportReport("md")}>
+        <button
+          className="button secondary"
+          onClick={() => exportReport("md", source)}
+        >
           <Download size={15} />
           Markdown
         </button>
@@ -394,7 +417,7 @@ export default function App() {
             void act(async () =>
               copy(
                 await invoke<string>("copy_summary", {
-                  id: report.id,
+                  id: source.id,
                   detailed,
                 }),
               ),
@@ -492,7 +515,12 @@ export default function App() {
     );
   const checkList = () => (
     <div className="checks">
-      {initialNames.map((id) => {
+      {(report?.nat ||
+      checks.some((c) => c.id === "nat") ||
+      (!report && settings.nat_enabled)
+        ? [...initialNames, "nat"]
+        : initialNames
+      ).map((id) => {
         const c = (report?.checks ?? checks).find((c) => c.id === id);
         return (
           <details className="check-row" key={id}>
@@ -584,7 +612,7 @@ export default function App() {
         </div>
         <div className="nav-caption">{t("工作空间", "WORKSPACE")}</div>
         <nav aria-label={t("主导航", "Main navigation")}>
-          {navigation.slice(0, 7).map((n) => (
+          {navigation.slice(0, 8).map((n) => (
             <button
               key={n.id}
               className={`nav-item ${page === n.id ? "active" : ""}`}
@@ -613,7 +641,7 @@ export default function App() {
               </p>
             </div>
           </div>
-          {navigation.slice(7).map((n) => (
+          {navigation.slice(8).map((n) => (
             <button
               key={n.id}
               className={`nav-item ${page === n.id ? "active" : ""}`}
@@ -625,7 +653,7 @@ export default function App() {
           ))}
           <div className="version">
             <span className="tiny-dot" />
-            v0.1.0-beta.1<span>MIT</span>
+            v0.1.0-beta.2<span>MIT</span>
           </div>
         </div>
       </aside>
@@ -863,8 +891,8 @@ export default function App() {
                   <h1>{t("循着证据，找到原因", "Follow the evidence")}</h1>
                   <p>
                     {t(
-                      "16 项真实检查，给出可解释的分析与下一步。",
-                      "16 real checks with explainable findings and next steps.",
+                      "16 项基础检查，可选 NAT 类型探测，保留判断依据与下一步。",
+                      "16 core checks with optional NAT discovery, evidence and next steps.",
                     )}
                   </p>
                 </div>
@@ -900,17 +928,19 @@ export default function App() {
                           : t("诊断已完成", "Diagnosis complete")
                         : t("等待开始", "Ready when you are")}
                   </strong>
-                  <span>{completed} / 16</span>
+                  <span>
+                    {completed} / {totalChecks}
+                  </span>
                 </div>
                 <progress
-                  max={16}
+                  max={totalChecks}
                   value={completed}
                   aria-label={t("诊断进度", "Diagnosis progress")}
                 />
                 <p>
                   {t(
-                    "目标可在设置中查看和修改。公网测试由你点击开始后发起；不使用公网 IP 查询服务。",
-                    "Review targets in Settings. Public probes begin only when you start a job; no public-IP discovery service is used.",
+                    "目标可在设置中查看和修改。NAT 探测默认关闭；同意并启用后，会通过所选 STUN 服务器探测公网映射 IP 与端口。",
+                    "Review targets in Settings. NAT discovery is off by default; enabling it with consent discovers the public mapped IP and port through the selected STUN server.",
                   )}
                 </p>
               </div>
@@ -931,6 +961,9 @@ export default function App() {
                 {checkList()}
               </section>
               {findings()}
+              {report?.nat && (
+                <NatResultView key={report.id} result={report.nat} en={en} />
+              )}
               {reportActions()}
             </>
           )}
@@ -1587,6 +1620,136 @@ export default function App() {
             </>
           )}
 
+          {page === "nat" && (
+            <>
+              <div className="page-heading">
+                <div>
+                  <div className="eyebrow">NAT BEHAVIOR DISCOVERY</div>
+                  <h1>
+                    {t("看清当前 NAT 行为", "Understand your NAT behavior")}
+                  </h1>
+                  <p>
+                    {t(
+                      "真实 STUN 探测，分别判断映射与过滤；证据不足时保留未知。",
+                      "Real STUN probes distinguish mapping from filtering and preserve unknown results.",
+                    )}
+                  </p>
+                </div>
+                <span className="subtle-chip">IPv4 · UDP · RFC 5780</span>
+              </div>
+              <section className="glass section">
+                <h2>{t("检测目标与知情同意", "Target & consent")}</h2>
+                <div className="input-toolbar">
+                  {field(
+                    t(
+                      "STUN 服务器（域名或 IPv4:端口）",
+                      "STUN server (hostname or IPv4:port)",
+                    ),
+                    <input
+                      maxLength={259}
+                      value={natServer}
+                      disabled={!!job}
+                      onChange={(e) => {
+                        setNatServer(e.target.value);
+                        setNatConsent(false);
+                      }}
+                    />,
+                    t(
+                      "需支持 RFC 5780 的双 IP / 双端口才能完整分类。可使用自建服务器。",
+                      "Full classification requires RFC 5780 with two IPs and two ports. Custom servers are supported.",
+                    ),
+                  )}
+                </div>
+                <label className="checkbox nat-consent">
+                  <input
+                    type="checkbox"
+                    checked={natConsent}
+                    disabled={!!job}
+                    onChange={(e) => setNatConsent(e.target.checked)}
+                  />
+                  <span>
+                    {t(
+                      "我同意连接上面的 STUN 服务器及其公布的备用端点，探测公网映射 IP 与端口。接收方会看到来源 IP，结果只保存在本机。",
+                      "I consent to contact the STUN server above and its advertised alternate endpoints to discover my public mapped IP and port. Recipients see the source IP; results stay on this device.",
+                    )}
+                  </span>
+                </label>
+                <div className="nat-actions">
+                  <button
+                    className="button primary"
+                    disabled={!ready || !!job || inspecting || !natConsent}
+                    onClick={() => {
+                      setNatReport(null);
+                      setNatProbes([]);
+                      setNatCancelled(false);
+                      setDetailed(false);
+                      void start("nat", "start_nat", {
+                        server: natServer,
+                        consent: natConsent,
+                      });
+                    }}
+                  >
+                    <Play size={17} />
+                    {t("检测 NAT 类型", "Detect NAT behavior")}
+                  </button>
+                  {job?.kind === "nat" && (
+                    <button className="button danger" onClick={cancel}>
+                      <Square size={15} />
+                      {t("取消检测", "Cancel")}
+                    </button>
+                  )}
+                  <span className="muted small">
+                    {t(
+                      "最多 8 个顺序探测，单项最长 5 秒；不修改路由器、防火墙或系统网络配置。",
+                      "At most 8 sequential probes, up to 5 seconds each; router, firewall and network settings are unchanged.",
+                    )}
+                  </span>
+                </div>
+              </section>
+              {natReport?.nat ? (
+                <>
+                  <NatResultView
+                    key={natReport.id}
+                    result={natReport.nat}
+                    en={en}
+                  />
+                  {reportActions(natReport)}
+                </>
+              ) : (
+                <section className="glass section">
+                  {job?.kind === "nat" ? (
+                    <div className="section-heading">
+                      <h2>
+                        <LoaderCircle className="spin inline" size={17} />{" "}
+                        {t("正在探测 NAT", "Probing NAT behavior")}
+                      </h2>
+                      <span className="count">{natProbes.length} / ≤8</span>
+                    </div>
+                  ) : natCancelled ? (
+                    <p>
+                      {t(
+                        "检测已取消；以下仅为部分探测，不给出 NAT 类型结论。",
+                        "Cancelled; probes below are partial evidence and do not classify NAT.",
+                      )}
+                    </p>
+                  ) : (
+                    empty(
+                      t("等待一次真实检测", "Ready for a real measurement"),
+                      t(
+                        "确认目标并勾选同意后开始。NAT 类型不等于网络健康评分，也不保证游戏或 P2P 一定可用。",
+                        "Confirm the target and consent to begin. NAT behavior is separate from health scoring and does not guarantee game or P2P connectivity.",
+                      ),
+                      Network,
+                    )
+                  )}
+                  {natProbes.length > 0 && (
+                    <NatProbeTable probes={natProbes} en={en} />
+                  )}
+                </section>
+              )}
+            </>
+          )}
+
           {page === "tools" && (
             <>
               <div className="page-heading">
@@ -1845,15 +2008,26 @@ export default function App() {
                         <button
                           className="history-main"
                           onClick={() => {
-                            setReport(r);
-                            setSnapshot(r.snapshot);
-                            setChecks(r.checks);
-                            setCompleted(r.checks.length);
                             setDetailed(false);
-                            setPage("diagnose");
+                            if (r.nat && r.checks.length === 1) {
+                              setNatReport(r);
+                              setNatProbes(r.nat.probes);
+                              setNatCancelled(false);
+                              setPage("nat");
+                            } else {
+                              setReport(r);
+                              setSnapshot(r.snapshot);
+                              setChecks(r.checks);
+                              setCompleted(r.checks.length);
+                              setTotalChecks(r.nat ? 17 : 16);
+                              setPage("diagnose");
+                            }
                           }}
                         >
                           <strong>
+                            {r.nat && r.checks.length === 1
+                              ? "NAT Doctor · "
+                              : ""}
                             {new Date(r.started_at).toLocaleString()}
                           </strong>
                           <small>
@@ -1912,6 +2086,8 @@ export default function App() {
                     void act(async () => {
                       await invoke("save_settings", { settings: draft });
                       setSettings(draft);
+                      setNatServer(draft.stun_server);
+                      setNatConsent(false);
                       setNotice(t("设置已保存", "Settings saved"));
                     })
                   }
@@ -1957,8 +2133,8 @@ export default function App() {
                 <h2>{t("检测目标", "Probe targets")}</h2>
                 <p className="muted small">
                   {t(
-                    "点击诊断会连接以下目标。接收方会看到正常网络请求中的来源 IP；本程序不上传诊断报告，不调用公网 IP 查询服务。HTTP 为门户测试使用明文，不含凭据。",
-                    "Starting a diagnosis contacts these targets. They see the source IP of ordinary network requests. Reports are never uploaded; no public-IP discovery service is used. HTTP portal checks are plaintext and contain no credentials.",
+                    "点击诊断会连接以下目标，接收方会看到来源 IP。本程序不上传诊断报告。NAT 公网映射探测单独征求同意，默认关闭。HTTP 门户测试为不含凭据的明文请求。",
+                    "Starting a diagnosis contacts these targets, which see the source IP. Reports are never uploaded. Public mapped-IP discovery via STUN requires separate consent and is off by default. HTTP portal checks are plaintext and contain no credentials.",
                   )}
                 </p>
                 <div className="split-grid">
@@ -1994,6 +2170,44 @@ export default function App() {
                     ),
                   )}
                 </div>
+              </section>
+              <section className="glass section">
+                <h2>{t("NAT 类型探测（可选）", "Optional NAT discovery")}</h2>
+                {field(
+                  t("STUN 服务器", "STUN server"),
+                  <input
+                    maxLength={259}
+                    value={draft.stun_server}
+                    onChange={(e) =>
+                      setDraft({
+                        ...draft,
+                        stun_server: e.target.value,
+                        nat_enabled: false,
+                      })
+                    }
+                  />,
+                )}
+                <label className="checkbox nat-consent">
+                  <input
+                    type="checkbox"
+                    checked={draft.nat_enabled}
+                    onChange={(e) =>
+                      setDraft({ ...draft, nat_enabled: e.target.checked })
+                    }
+                  />
+                  <span>
+                    {t(
+                      "我同意在每次一键诊断中连接上面的 STUN 服务器及其备用端点，探测公网映射 IP 与端口，并将结果保存在本机历史。",
+                      "I consent to contact the STUN server above and its alternate endpoints during each one-click diagnosis, discover the public mapped IP and port, and save results in local history.",
+                    )}
+                  </span>
+                </label>
+                <p className="muted small">
+                  {t(
+                    "默认关闭。修改 STUN 服务器会重置此同意；保存后生效。也可只在 NAT Doctor 页面主动测试一次。NAT 结果不影响健康评分。",
+                    "Off by default. Changing the STUN server resets consent; save to apply. You can also run a single test from NAT Doctor. NAT results do not affect the health score.",
+                  )}
+                </p>
               </section>
               <section className="glass section">
                 <h2>{t("采样与存储", "Sampling & storage")}</h2>
@@ -2054,7 +2268,7 @@ export default function App() {
                 <div className="eyebrow">FREE · OPEN SOURCE · LOCAL FIRST</div>
                 <h1>HoriNet Doctor</h1>
                 <p>Network Diagnostics & Troubleshooting</p>
-                <span className="beta-pill">v0.1.0-beta.1 · MIT</span>
+                <span className="beta-pill">v0.1.0-beta.2 · MIT</span>
                 <button
                   className="button primary"
                   disabled={!ready}
