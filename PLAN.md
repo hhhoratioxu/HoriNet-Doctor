@@ -2,6 +2,20 @@
 
 Version: 0.1.0-beta.2. Independent implementation; no private HoriLink sources used.
 
+## Native NAT desktop acceptance — completed 2026-10-20
+
+- [x] Exercise the installed NAT page's consent gate and real STUN detection.
+- [x] Cancel a running probe, verify partial state and run again.
+- [x] Open the saved NAT record from History, including after restarting.
+- [x] Export JSON and Markdown through native save dialogs; inspect actual files and privacy.
+- [x] Verify summary copy, export-dialog cancellation, explicit detailed export and privacy reset.
+- [x] Verify deletion/cancel using a record created by this test; cancel Clear All and preserve all four pre-existing records.
+- [x] Record exact application/source version and evidence. No application defect observed; no new binary release needed.
+
+Acceptance screenshots and reports stay under a dedicated local-app-data test directory, outside the synced source checkout. Do not equate CLI or browser preview checks with these native desktop flows.
+
+Installed beta.2 (released source `620de573068906b2dbd7cb40ac5bf79fc1b7209d`) completed four real NAT runs. The first took 7,854 ms and the post-cancellation run took 7,824 ms, each with 8 probes verified in its stored record. Cancellation retained one partial probe, no final classification and no completed history record. Restart/history/export/clipboard checks passed. Default JSON (9,228 bytes), Markdown (8,837 bytes) and copied summary contained none of the four actual IPv4 values from the selected source record; explicit detailed JSON (9,618 bytes) retained the selected endpoints. [Native acceptance record](docs/NAT_DESKTOP_ACCEPTANCE.md).
+
 ## NAT Doctor follow-up — 2026-10-20
 
 - [x] Recover relocated checkout; verify clean Git state and GitHub owner/permissions.
@@ -18,7 +32,7 @@ Final CI `39435459052` and Release `39435605254` succeeded with 51 tests, zero f
 All four assets downloaded, checksums/provenance verified; installer 3,831,684 bytes, NotSigned.
 Install exit 0; installed product version 0.1.0-beta.2, real native window responsive.
 Released MSVC CLI completed 8 real STUN probes in 7,770 ms, port-restricted-cone inference with low confidence; standalone core acceptance completed 17 checks and local history/export.
-NAT page end-to-end native UI interactions remain unverified: automatic review blocked the debugging-port command, and normal UI Automation exposed only window controls. Rendering, IPC compilation and core behavior are separately verified. No physical-router, carrier or Windows 10 acceptance is claimed. See docs/VALIDATION.md.
+The earlier NAT native UI acceptance gap is now closed for the flows recorded above, using ordinary Windows window input and screenshots with the installed release. The earlier debugging-port attempt remained blocked and was not retried. No diverse physical-router, carrier or Windows 10 acceptance is claimed. See docs/VALIDATION.md.
 
 The checkout moved to `D:\iCloud\iCloudDrive\Documents\CodeX\Hori开源\HoriNet-Doctor`.
 NAT discovery sends no traffic until explicit user consent. A failed STUN request is not an Internet outage; unsupported behavior discovery remains unknown.

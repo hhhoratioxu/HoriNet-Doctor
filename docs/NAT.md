@@ -10,6 +10,8 @@ NAT Doctor measures **IPv4 UDP** using an independently implemented STUN client 
 4. Review mapping, filtering, confidence and limitations. Use JSON/Markdown export or copy the summary; all endpoints and nested evidence are redacted by default. Detailed export is an explicit choice.
 5. To include NAT in every **one-click diagnosis**, open Settings, review the STUN server, explicitly enable the NAT consent option and save. It is **off by default**, including when upgrading old settings. Changing that server resets the consent checkbox. Enabled runs have 17 checks; ordinary runs retain 16. NAT does not change the health score.
 
+Standalone cancelled probes are visible only in the current session and are not saved as a completed NAT history record. Open a completed **NAT Doctor** row in History to return to this page, including after restarting the app. Reopening a history record resets detailed export to unchecked. Cancelling the Windows Save As dialog writes no report. The installed beta.2 detection/cancel/history/JSON/Markdown/clipboard flows were [exercised on Windows 11](NAT_DESKTOP_ACCEPTANCE.md); this does not cover every router, carrier or Windows version.
+
 CLI:
 
 ```text
